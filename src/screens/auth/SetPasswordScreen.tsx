@@ -3,7 +3,7 @@
 
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GoldButton } from '../../components/GoldButton';
 import { InputField } from '../../components/InputField';
@@ -50,68 +50,70 @@ export function SetPasswordScreen({ navigation, route }: Props) {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <NavRow onBack={() => navigation.popToTop()} />
 
-      <View style={styles.form}>
-        <View style={styles.heading}>
-          <Text style={styles.title}>Set a new password</Text>
-          <Text style={styles.subtitle}>
-            Choose something strong — you won&apos;t need to remember the old one.
-          </Text>
-        </View>
-
-        <View style={styles.fields}>
-          <InputField
-            label="Reset Code"
-            placeholder="123456"
-            value={code}
-            onChangeText={setCode}
-            icon={<LockIcon />}
-            keyboardType="number-pad"
-          />
-
-          <View>
-            <InputField
-              label="New Password"
-              placeholder="••••••••"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              icon={<LockIcon />}
-              secureTextEntry={!showNew}
-              trailing={
-                <Pressable onPress={() => setShowNew((v) => !v)} hitSlop={8}>
-                  <EyeIcon open={showNew} />
-                </Pressable>
-              }
-            />
-            <PasswordStrengthMeter password={newPassword} />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+          <View style={styles.heading}>
+            <Text style={styles.title}>Set a new password</Text>
+            <Text style={styles.subtitle}>
+              Choose something strong — you won&apos;t need to remember the old one.
+            </Text>
           </View>
 
-          <View>
+          <View style={styles.fields}>
             <InputField
-              label="Confirm Password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              label="Reset Code"
+              placeholder="123456"
+              value={code}
+              onChangeText={setCode}
               icon={<LockIcon />}
-              secureTextEntry={!showConfirm}
-              trailing={
-                <Pressable onPress={() => setShowConfirm((v) => !v)} hitSlop={8}>
-                  <EyeIcon open={showConfirm} />
-                </Pressable>
-              }
+              keyboardType="number-pad"
             />
-            {mismatch && <Text style={styles.mismatch}>Passwords don&apos;t match</Text>}
-            {match && <Text style={styles.match}>✓ Passwords match</Text>}
+
+            <View>
+              <InputField
+                label="New Password"
+                placeholder="••••••••"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                icon={<LockIcon />}
+                secureTextEntry={!showNew}
+                trailing={
+                  <Pressable onPress={() => setShowNew((v) => !v)} hitSlop={8}>
+                    <EyeIcon open={showNew} />
+                  </Pressable>
+                }
+              />
+              <PasswordStrengthMeter password={newPassword} />
+            </View>
+
+            <View>
+              <InputField
+                label="Confirm Password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                icon={<LockIcon />}
+                secureTextEntry={!showConfirm}
+                trailing={
+                  <Pressable onPress={() => setShowConfirm((v) => !v)} hitSlop={8}>
+                    <EyeIcon open={showConfirm} />
+                  </Pressable>
+                }
+              />
+              {mismatch && <Text style={styles.mismatch}>Passwords don&apos;t match</Text>}
+              {match && <Text style={styles.match}>✓ Passwords match</Text>}
+            </View>
           </View>
-        </View>
 
-        {error && <Text style={styles.mismatch}>{error}</Text>}
+          {error && <Text style={styles.mismatch}>{error}</Text>}
 
-        <View style={{ marginTop: 28 }}>
-          <GoldButton onPress={handleReset} loading={submitting} disabled={!canSubmit}>
-            Reset Password
-          </GoldButton>
-        </View>
-      </View>
+          <View style={{ marginTop: 28 }}>
+            <GoldButton onPress={handleReset} loading={submitting} disabled={!canSubmit}>
+              Reset Password
+            </GoldButton>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -124,6 +126,7 @@ const styles = StyleSheet.create({
   form: {
     paddingHorizontal: 24,
     paddingTop: 36,
+    paddingBottom: 32,
   },
   heading: {
     marginBottom: 32,

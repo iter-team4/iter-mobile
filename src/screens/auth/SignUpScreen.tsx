@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GoldButton } from '../../components/GoldButton';
 import { InputField } from '../../components/InputField';
@@ -50,6 +50,7 @@ export function SignUpScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <NavRow onBack={() => navigation.goBack()} />
 
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <View style={styles.heading}>
           <Text style={styles.title}>Create Account</Text>
@@ -140,6 +141,7 @@ export function SignUpScreen({ navigation }: Props) {
           </Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

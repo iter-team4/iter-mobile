@@ -6,7 +6,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   BackArrowIcon,
@@ -125,29 +125,31 @@ export function PathBuilderScreen({ navigation }: Props) {
         onMapPress={handleMapPress}
       />
 
-      <SafeAreaView edges={['top']} style={styles.topBar} pointerEvents="box-none">
-        <Pressable onPress={() => navigation.goBack()} style={styles.roundButton}>
-          <BackArrowIcon />
-        </Pressable>
-        <View style={styles.titlePill}>
-          <Text style={styles.titleEyebrow}>ROUTE BUILDER</Text>
-          <Text style={styles.titleText}>Create Path</Text>
+      <SafeAreaView edges={['top']} style={styles.topOverlay} pointerEvents="box-none">
+        <View style={styles.topBar}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.roundButton}>
+            <BackArrowIcon />
+          </Pressable>
+          <View style={styles.titlePill}>
+            <Text style={styles.titleEyebrow}>ROUTE BUILDER</Text>
+            <Text style={styles.titleText}>Create Path</Text>
+          </View>
+        </View>
+
+        <View style={styles.statsPill} pointerEvents="none">
+          <Text style={styles.statsDistance}>{totalMiles.toFixed(2)} mi</Text>
+          <View style={styles.dot} />
+          <Text style={styles.statsPoints}>
+            {points.length} {points.length === 1 ? 'point' : 'points'}
+          </Text>
+          {points.length === 0 && (
+            <>
+              <View style={styles.dot} />
+              <Text style={styles.statsHint}>Tap map to begin</Text>
+            </>
+          )}
         </View>
       </SafeAreaView>
-
-      <View style={styles.statsPill} pointerEvents="none">
-        <Text style={styles.statsDistance}>{totalMiles.toFixed(2)} mi</Text>
-        <View style={styles.dot} />
-        <Text style={styles.statsPoints}>
-          {points.length} {points.length === 1 ? 'point' : 'points'}
-        </Text>
-        {points.length === 0 && (
-          <>
-            <View style={styles.dot} />
-            <Text style={styles.statsHint}>Tap map to begin</Text>
-          </>
-        )}
-      </View>
 
       <View style={styles.sideButtons}>
         <Pressable onPress={handleLocateMe} disabled={locating} style={styles.roundButton}>
@@ -188,46 +190,47 @@ export function PathBuilderScreen({ navigation }: Props) {
         </Pressable>
       </View>
 
-      <Modal visible={saveSheetOpen} transparent animationType="slide" onRequestClose={() => setSaveSheetOpen(false)}>
-        <Pressable style={styles.scrim} onPress={() => setSaveSheetOpen(false)} />
-        <View style={styles.sheet}>
-          <View style={styles.sheetHandle} />
-          <View style={styles.sheetHeaderRow}>
-            <Text style={styles.sheetTitle}>Name your path</Text>
-            <View style={styles.sheetWordmark}>
-              <LogoMark size={10} color={colors.charcoal} />
-              <Text style={styles.sheetWordmarkText}>iter</Text>
+      <Modal visible={saveSheetOpen} transparent animationType="fade" onRequestClose={() => setSaveSheetOpen(false)}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setSaveSheetOpen(false)} />
+          <View style={styles.sheet}>
+            <View style={styles.sheetHeaderRow}>
+              <Text style={styles.sheetTitle}>Name your path</Text>
+              <View style={styles.sheetWordmark}>
+                <LogoMark size={10} color={colors.charcoal} />
+                <Text style={styles.sheetWordmarkText}>iter</Text>
+              </View>
+            </View>
+
+            <Text style={styles.fieldLabel}>Path name</Text>
+            <TextInput
+              value={pathName}
+              onChangeText={setPathName}
+              placeholder="Morning Run"
+              placeholderTextColor={colors.muted}
+              autoFocus
+              style={styles.nameInput}
+            />
+
+            <View style={styles.previewStrip}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.previewName}>{pathName.trim() || 'Morning Run'}</Text>
+                <Text style={styles.previewMeta}>
+                  {totalMiles.toFixed(2)} mi · {points.length} points
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.sheetActions}>
+              <Pressable onPress={() => setSaveSheetOpen(false)} style={styles.sheetCancelButton}>
+                <Text style={styles.sheetCancelLabel}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={handleSave} disabled={saving} style={styles.sheetSaveButton}>
+                <Text style={styles.sheetSaveLabel}>{saving ? 'Saving…' : 'Save'}</Text>
+              </Pressable>
             </View>
           </View>
-
-          <Text style={styles.fieldLabel}>Path name</Text>
-          <TextInput
-            value={pathName}
-            onChangeText={setPathName}
-            placeholder="Morning Run"
-            placeholderTextColor={colors.muted}
-            autoFocus
-            style={styles.nameInput}
-          />
-
-          <View style={styles.previewStrip}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.previewName}>{pathName.trim() || 'Morning Run'}</Text>
-              <Text style={styles.previewMeta}>
-                {totalMiles.toFixed(2)} mi · {points.length} points
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.sheetActions}>
-            <Pressable onPress={() => setSaveSheetOpen(false)} style={styles.sheetCancelButton}>
-              <Text style={styles.sheetCancelLabel}>Cancel</Text>
-            </Pressable>
-            <Pressable onPress={handleSave} disabled={saving} style={styles.sheetSaveButton}>
-              <Text style={styles.sheetSaveLabel}>{saving ? 'Saving…' : 'Save'}</Text>
-            </Pressable>
-          </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -248,14 +251,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  topBar: {
+  topOverlay: {
     position: 'absolute',
     top: 0,
-    left: 12,
-    right: 12,
+    left: 0,
+    right: 0,
+  },
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    marginHorizontal: 12,
   },
   titlePill: {
     flex: 1,
@@ -292,9 +298,8 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   statsPill: {
-    position: 'absolute',
-    top: 92,
     alignSelf: 'center',
+    marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -362,24 +367,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  scrim: {
+  modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(26,23,20,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
   },
   sheet: {
+    width: '100%',
+    maxWidth: 420,
     backgroundColor: colors.fieldBg,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 24,
-    paddingBottom: 36,
-  },
-  sheetHandle: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: 99,
-    backgroundColor: 'rgba(110,100,88,0.25)',
-    marginVertical: 12,
+    borderRadius: 24,
+    padding: 24,
   },
   sheetHeaderRow: {
     flexDirection: 'row',
