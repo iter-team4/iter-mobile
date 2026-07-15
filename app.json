@@ -1,25 +1,44 @@
 {
   "expo": {
-    "name": "app-tmp",
-    "slug": "app-tmp",
+    "name": "iter",
+    "slug": "iter-running-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "iter",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.iter.runningapp",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "iter needs your location to track your runs and draw routes on the map."
+      }
     },
     "android": {
+      "package": "com.iter.runningapp",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "iter needs your location to track your runs and draw routes on the map."
+        }
+      ],
+      "expo-secure-store"
+    ]
   }
 }

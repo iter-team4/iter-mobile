@@ -1,20 +1,24 @@
+// App entry point. Just wires up the providers (safe area insets, auth,
+// run data) and hands off to the navigator - all the actual logic lives
+// in src/.
+
+import 'react-native-gesture-handler'; // must be the very first import - see react-navigation docs
+import React from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { AuthProvider } from './src/context/AuthContext';
+import { RunDataProvider } from './src/context/RunDataContext';
+import { RootNavigator } from './src/navigation/RootNavigator';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <RunDataProvider>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </RunDataProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
