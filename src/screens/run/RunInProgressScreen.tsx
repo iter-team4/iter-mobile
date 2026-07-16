@@ -11,12 +11,12 @@ import { LeafletMap, type LeafletMarker, type LeafletPolyline } from '../../comp
 import type { AppStackParamList } from '../../navigation/types';
 import { colors } from '../../theme/colors';
 import { formatDuration, formatPace, totalDistanceMiles, type LatLng } from '../../utils/geo';
+import { setAudioModeAsync,useAudioPlayer } from 'expo-audio';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'RunInProgress'>;
 
 export function RunInProgressScreen({ navigation, route }: Props) {
   const { path } = route.params;
-
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [traveledRoute, setTraveledRoute] = useState<LatLng[]>([]);
   const [initialCenter, setInitialCenter] = useState<LatLng | null>(null);
@@ -66,13 +66,29 @@ export function RunInProgressScreen({ navigation, route }: Props) {
   const plannedMiles = Math.max(path.distanceMiles, 0.01);
   const progress = Math.min(distanceMiles / plannedMiles, 1);
   const currentPosition = traveledRoute[traveledRoute.length - 1] ?? path.points[0];
+ const stopSound = useAudioPlayer(
+     require ('../../../assets/sounds/finish-run.mp3')
+   );
 
-  const handleStop = () => {
-    watchSubscription.current?.remove();
+const handleStop = async () => {
+  watchSubscription.current?.remove();
+
+  stopSound.volume = 0.5;
+  await stopSound.seekTo(0);
+  stopSound.play();
+
+  // Wait for the sound to finish (adjust time to your audio length)
+  setTimeout(() => {
     navigation.replace('RunComplete', {
-      stats: { elapsedSeconds, distanceMiles, route: traveledRoute, path },
+      stats: {
+        elapsedSeconds,
+        distanceMiles,
+        route: traveledRoute,
+        path,
+      },
     });
-  };
+  }, 7000); // 1000 ms = 1 second
+};
 
   if (!initialCenter) {
     return (

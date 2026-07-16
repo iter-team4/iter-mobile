@@ -38,7 +38,8 @@
           "locationWhenInUsePermission": "iter needs your location to track your runs and draw routes on the map."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-audio"
     ]
   }
 }

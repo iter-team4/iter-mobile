@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LogoMark } from '../../components/icons';
@@ -8,11 +8,35 @@ import { RouteThumbnail } from '../../components/RouteThumbnail';
 import { useRunData } from '../../context/RunDataContext';
 import type { AppStackParamList } from '../../navigation/types';
 import { colors } from '../../theme/colors';
+import { setAudioModeAsync,useAudioPlayer } from 'expo-audio';
+
 
 type Props = NativeStackScreenProps<AppStackParamList, 'StartRun'>;
 
 export function StartRunScreen({ navigation }: Props) {
   const { savedPaths } = useRunData();
+  const startSound = useAudioPlayer(
+    require ('../../../assets/sounds/Start.mp3')
+  );
+
+   useEffect(() => {
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      }).catch((error) => {
+        console.error('Failed to configure audio:', error);
+      });
+    }, []);
+
+  async function handleStartRun(path: (typeof savedPaths)[number]) {
+    try {
+      await startSound.seekTo(0);
+      startSound.play();
+      } catch (error) {
+      console.error('Failed to play audio:', error);
+      }
+
+    navigation.navigate('RunInProgress', { path });
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -49,7 +73,7 @@ export function StartRunScreen({ navigation }: Props) {
                 </View>
               </View>
               <Pressable
-                onPress={() => navigation.navigate('RunInProgress', { path: item })}
+                onPress={() => handleStartRun(item)}
                 style={({ pressed }) => [styles.startButton, pressed && styles.pressed]}
               >
                 <LogoMark size={11} color="#1A1714" />
@@ -62,6 +86,7 @@ export function StartRunScreen({ navigation }: Props) {
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
