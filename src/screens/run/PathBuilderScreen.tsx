@@ -19,6 +19,7 @@ import {
 import { LeafletMap, type LeafletMapHandle, type LeafletMarker, type LeafletPolyline } from '../../components/LeafletMap';
 import { useRunData } from '../../context/RunDataContext';
 import type { AppStackParamList } from '../../navigation/types';
+import { getWalkingRoute, type WalkingRoute } from '../../services/routing';
 import { colors } from '../../theme/colors';
 import { totalDistanceMiles, type LatLng } from '../../utils/geo';
 
@@ -39,6 +40,10 @@ export function PathBuilderScreen({ navigation }: Props) {
   const [pathName, setPathName] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [snappedRoute, setSnappedRoute] = useState<WalkingRoute | null>(null);
+  const [snapping, setSnapping] = useState(false);
+  const snapRequestId = useRef(0);
+
   // Center the map on the user's actual location as soon as we're allowed to.
   useEffect(() => {
     (async () => {
@@ -56,7 +61,40 @@ export function PathBuilderScreen({ navigation }: Props) {
     })();
   }, []);
 
-  const totalMiles = totalDistanceMiles(points);
+  // Re-route through OSRM every time the tapped points change, so the line
+  // bends to follow real footpaths instead of just connecting the dots. This
+  // is debounced so a burst of taps only fires one request once things settle,
+  // and the request id guards against an older response landing after a newer
+  // one - both matter more here than they would on a single click on the web,
+  // since a phone tap sequence is a lot less deliberate.
+  useEffect(() => {
+    if (points.length < 2) {
+      setSnappedRoute(null);
+      return;
+    }
+
+    const requestId = ++snapRequestId.current;
+    const timer = setTimeout(() => {
+      setSnapping(true);
+      getWalkingRoute(points)
+        .then((route) => {
+          if (snapRequestId.current === requestId) setSnappedRoute(route);
+        })
+        .catch(() => {
+          // Public OSRM demo server hiccup, no signal, or no walkable route
+          // between these points - just keep the straight line rather than
+          // interrupting someone drawing a path with an error.
+          if (snapRequestId.current === requestId) setSnappedRoute(null);
+        })
+        .finally(() => {
+          if (snapRequestId.current === requestId) setSnapping(false);
+        });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [points]);
+
+  const totalMiles = snappedRoute?.distanceMiles ?? totalDistanceMiles(points);
   const canSave = points.length >= 2;
 
   const handleMapPress = (coordinate: LatLng) => {
@@ -75,12 +113,16 @@ export function PathBuilderScreen({ navigation }: Props) {
     }
   };
 
-  // Turn the raw points into what LeafletMap actually wants to draw: one
-  // gold line connecting them, plus a marker per point (bigger dots for the
-  // start/end, and the end marker gets an inverted fill so it reads as
-  // "different" from the rest at a glance).
-  const polylines: LeafletPolyline[] =
-    points.length > 1 ? [{ coordinates: points, color: colors.gold, weight: 4 }] : [];
+  // Draw the snapped route once we have one; otherwise fall back to a
+  // straight line between taps so there's always something on the map while
+  // OSRM is still thinking (or unreachable). Markers stay on the raw taps
+  // either way - bigger dots for the start/end, and the end marker gets an
+  // inverted fill so it reads as "different" from the rest at a glance.
+  const polylines: LeafletPolyline[] = snappedRoute
+    ? [{ coordinates: snappedRoute.geometry, color: colors.gold, weight: 4 }]
+    : points.length > 1
+      ? [{ coordinates: points, color: colors.gold, weight: 4 }]
+      : [];
 
   const markers: LeafletMarker[] = points.map((point, index) => {
     const isStart = index === 0;
@@ -96,7 +138,7 @@ export function PathBuilderScreen({ navigation }: Props) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await addPath(pathName, points);
+      await addPath(pathName, snappedRoute?.geometry ?? points);
       setSaveSheetOpen(false);
       setPathName('');
       navigation.goBack();
@@ -146,6 +188,12 @@ export function PathBuilderScreen({ navigation }: Props) {
             <>
               <View style={styles.dot} />
               <Text style={styles.statsHint}>Tap map to begin</Text>
+            </>
+          )}
+          {snapping && (
+            <>
+              <View style={styles.dot} />
+              <Text style={styles.statsHint}>Snapping…</Text>
             </>
           )}
         </View>
