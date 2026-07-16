@@ -5,13 +5,15 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {AppState,Pressable,StyleSheet,Text,View,} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LeafletMap, type LeafletMarker, type LeafletPolyline } from '../../components/LeafletMap';
 import type { AppStackParamList } from '../../navigation/types';
 import { colors } from '../../theme/colors';
 import { formatDuration, formatPace, totalDistanceMiles, type LatLng } from '../../utils/geo';
-import { setAudioModeAsync,useAudioPlayer } from 'expo-audio';
+import {useAudioPlayer } from 'expo-audio';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {LOCATION_TASK_NAME,RUN_LOCATIONS_KEY,} from '../../navigation/locationTask';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'RunInProgress'>;
 
@@ -21,6 +23,41 @@ export function RunInProgressScreen({ navigation, route }: Props) {
   const [traveledRoute, setTraveledRoute] = useState<LatLng[]>([]);
   const [initialCenter, setInitialCenter] = useState<LatLng | null>(null);
   const watchSubscription = useRef<Location.LocationSubscription | null>(null);
+
+  const loadBackgroundRoute = async () => {
+  try {
+    const storedJson =
+      await AsyncStorage.getItem(RUN_LOCATIONS_KEY);
+
+    if (!storedJson) return;
+
+    const storedPoints: Array<{
+      latitude: number;
+      longitude: number;
+      timestamp?: number;
+    }> = JSON.parse(storedJson);
+
+    const routePoints: LatLng[] = storedPoints.map(
+      ({ latitude, longitude }) => ({
+        latitude,
+        longitude,
+      }),
+    );
+
+    if (routePoints.length === 0) return;
+
+    setTraveledRoute(routePoints);
+
+    setInitialCenter((previousCenter) => {
+      return previousCenter ?? routePoints[0];
+    });
+  } catch (error) {
+    console.error(
+      'Could not load background route:',
+      error,
+    );
+  }
+};
 
   // Simple 1hz timer for the elapsed-time display.
   useEffect(() => {
@@ -34,12 +71,36 @@ export function RunInProgressScreen({ navigation, route }: Props) {
     let cancelled = false;
 
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted' || cancelled) return;
+      const foreground = await Location.requestForegroundPermissionsAsync();
+
+      if (foreground.status !== 'granted') return;
+
+      const background = await Location.requestBackgroundPermissionsAsync();
+
+      if (background.status !== 'granted') return;
 
       const startingPoint = path.points[0];
       if (startingPoint) {
         setInitialCenter(startingPoint);
+      }
+
+      const alreadyTracking = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME,);
+
+      if (!alreadyTracking) {
+        await AsyncStorage.removeItem(RUN_LOCATIONS_KEY);
+
+        await Location.startLocationUpdatesAsync(
+          LOCATION_TASK_NAME,
+          {
+            accuracy: Location.Accuracy.High,
+            distanceInterval: 3,
+            pausesUpdatesAutomatically: false,
+            foregroundService: {
+              notificationTitle: 'Run in Progress',
+              notificationBody: 'Tracking your run',
+            },
+          },
+        );
       }
 
       watchSubscription.current = await Location.watchPositionAsync(
@@ -55,7 +116,22 @@ export function RunInProgressScreen({ navigation, route }: Props) {
 
     return () => {
       cancelled = true;
+
       watchSubscription.current?.remove();
+      watchSubscription.current = null;
+
+      void (async () => {
+        const started =
+          await Location.hasStartedLocationUpdatesAsync(
+            LOCATION_TASK_NAME,
+          );
+
+        if (started) {
+          await Location.stopLocationUpdatesAsync(
+            LOCATION_TASK_NAME,
+          );
+        }
+      })();
     };
     // path only changes if this screen gets a totally new route param, which
     // doesn't happen mid-run - fine to only depend on identity here.
@@ -66,29 +142,61 @@ export function RunInProgressScreen({ navigation, route }: Props) {
   const plannedMiles = Math.max(path.distanceMiles, 0.01);
   const progress = Math.min(distanceMiles / plannedMiles, 1);
   const currentPosition = traveledRoute[traveledRoute.length - 1] ?? path.points[0];
- const stopSound = useAudioPlayer(
-     require ('../../../assets/sounds/finish-run.mp3')
-   );
+  const stopSound = useAudioPlayer(
+    require ('../../../assets/sounds/finish-run.mp3')
+  );
 
-const handleStop = async () => {
-  watchSubscription.current?.remove();
+  const handleStop = async () => {
+    watchSubscription.current?.remove();
+    watchSubscription.current = null;
 
-  stopSound.volume = 0.5;
-  await stopSound.seekTo(0);
-  stopSound.play();
+    const started =
+      await Location.hasStartedLocationUpdatesAsync(
+        LOCATION_TASK_NAME,
+      );
 
-  // Wait for the sound to finish (adjust time to your audio length)
-  setTimeout(() => {
-    navigation.replace('RunComplete', {
-      stats: {
-        elapsedSeconds,
-        distanceMiles,
-        route: traveledRoute,
-        path,
-      },
-    });
-  }, 7000); // 1000 ms = 1 second
-};
+    if (started) {
+      await Location.stopLocationUpdatesAsync(
+        LOCATION_TASK_NAME,
+      );
+    }
+
+    const storedJson =
+      await AsyncStorage.getItem(RUN_LOCATIONS_KEY);
+
+    const storedPoints: Array<{
+      latitude: number;
+      longitude: number;
+    }> = storedJson
+      ? JSON.parse(storedJson)
+      : [];
+
+    const finalRoute: LatLng[] =
+      storedPoints.length > 0
+        ? storedPoints.map(({ latitude, longitude }) => ({
+            latitude,
+            longitude,
+          }))
+        : traveledRoute;
+
+    const finalDistanceMiles =
+      totalDistanceMiles(finalRoute);
+
+    stopSound.volume = 0.5;
+    await stopSound.seekTo(0);
+    stopSound.play();
+
+    setTimeout(() => {
+      navigation.replace('RunComplete', {
+        stats: {
+          elapsedSeconds,
+          distanceMiles: finalDistanceMiles,
+          route: finalRoute,
+          path,
+        },
+      });
+    }, 7000);
+  };
 
   if (!initialCenter) {
     return (

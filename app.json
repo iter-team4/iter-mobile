@@ -11,7 +11,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.iter.runningapp",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "iter needs your location to track your runs and draw routes on the map."
+        "NSLocationWhenInUseUsageDescription": "iter needs your location to track your runs and draw routes on the map.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -25,7 +26,11 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "web": {
@@ -40,6 +45,12 @@
       ],
       "expo-secure-store",
       "expo-audio"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1e83dd23-07df-4d22-ba9d-8a609df9e043"
+      }
+    },
+    "owner": "thelastwiz"
   }
 }

@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/context/AuthContext';
 import { RunDataProvider } from './src/context/RunDataContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import './src/navigation/locationTask';
 
 export default function App() {
   return (
