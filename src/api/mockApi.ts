@@ -19,6 +19,7 @@ export interface RunRecord {
   durationSeconds: number;
   route: LatLng[];
   date: string; // ISO date
+  targetPaceSeconds: number;
 }
 
 function makeId(): string {

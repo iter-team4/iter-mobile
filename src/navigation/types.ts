@@ -28,12 +28,20 @@ export type RunStats = {
   distanceMiles: number;
   route: SavedPath['points'];
   path: SavedPath;
+  targetPaceSeconds: number;
 };
 
 export type AppStackParamList = {
   MainTabs: undefined;
   PathBuilder: undefined;
   StartRun: undefined;
-  RunInProgress: { path: SavedPath };
-  RunComplete: { stats: RunStats };
+
+  RunInProgress: {
+    path: SavedPath;
+    targetPaceSeconds: number;
+  };
+
+  RunComplete: {
+    stats: RunStats;
+  };
 };

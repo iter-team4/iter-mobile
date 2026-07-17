@@ -11,12 +11,46 @@ import { LeafletMap, type LeafletMarker, type LeafletPolyline } from '../../comp
 import type { AppStackParamList } from '../../navigation/types';
 import { colors } from '../../theme/colors';
 import { formatDuration, formatPace, totalDistanceMiles, type LatLng } from '../../utils/geo';
-import { setAudioModeAsync,useAudioPlayer } from 'expo-audio';
+import {useAudioPlayer } from 'expo-audio';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'RunInProgress'>;
 
+function getPaceColor(
+  currentPaceSeconds: number | null,
+  targetPaceSeconds: number,
+) {
+  if (
+    currentPaceSeconds === null ||
+    !Number.isFinite(currentPaceSeconds) ||
+    !Number.isFinite(targetPaceSeconds)
+  ) {
+    return colors.muted;
+  }
+
+  const difference = currentPaceSeconds - targetPaceSeconds;
+  const absoluteDifference = Math.abs(difference);
+
+  // Within one minute of target pace
+  if (absoluteDifference <= 60) {
+    return colors.success;
+  }
+
+  // Between one and two minutes away
+  if (absoluteDifference <= 120) {
+    return colors.gold;
+  }
+
+  // More than two minutes slower than target
+  if (difference > 120) {
+    return colors.danger;
+  }
+
+  // More than two minutes faster than target
+  return colors.success;
+}
+
 export function RunInProgressScreen({ navigation, route }: Props) {
-  const { path } = route.params;
+  const { path, targetPaceSeconds } = route.params;
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [traveledRoute, setTraveledRoute] = useState<LatLng[]>([]);
   const [initialCenter, setInitialCenter] = useState<LatLng | null>(null);
@@ -66,9 +100,17 @@ export function RunInProgressScreen({ navigation, route }: Props) {
   const plannedMiles = Math.max(path.distanceMiles, 0.01);
   const progress = Math.min(distanceMiles / plannedMiles, 1);
   const currentPosition = traveledRoute[traveledRoute.length - 1] ?? path.points[0];
- const stopSound = useAudioPlayer(
-     require ('../../../assets/sounds/finish-run.mp3')
-   );
+  const currentPaceSeconds =
+    distanceMiles >= 0.02
+      ? elapsedSeconds / distanceMiles
+      : null;
+  const paceColor = getPaceColor(
+    currentPaceSeconds,
+    targetPaceSeconds,
+  );
+  const stopSound = useAudioPlayer(
+    require ('../../../assets/sounds/finish-run.mp3')
+  );
 
 const handleStop = async () => {
   watchSubscription.current?.remove();
@@ -85,6 +127,7 @@ const handleStop = async () => {
         distanceMiles,
         route: traveledRoute,
         path,
+        targetPaceSeconds,
       },
     });
   }, 7000); // 1000 ms = 1 second
@@ -132,7 +175,9 @@ const handleStop = async () => {
           </View>
           <View style={styles.statColumn}>
             <Text style={styles.statLabel}>Pace</Text>
-            <Text style={styles.statValue}>{formatPace(elapsedSeconds, distanceMiles)}</Text>
+            <Text style={[styles.statValue, { color: paceColor }]}>
+              {formatPace(elapsedSeconds, distanceMiles)}
+            </Text>
             <Text style={styles.statUnit}>/mi</Text>
           </View>
         </View>

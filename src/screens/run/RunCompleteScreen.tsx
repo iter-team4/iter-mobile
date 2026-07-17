@@ -31,6 +31,7 @@ export function RunCompleteScreen({ navigation, route }: Props) {
       durationSeconds: stats.elapsedSeconds,
       route: stats.route.length > 0 ? stats.route : stats.path.points,
       date: new Date().toISOString(),
+      targetPaceSeconds : stats.targetPaceSeconds,
     });
     // Only want this to fire once, right when the screen mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -73,6 +74,11 @@ export function RunCompleteScreen({ navigation, route }: Props) {
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Avg Pace</Text>
             <Text style={styles.statValue}>{formatPace(stats.elapsedSeconds, stats.distanceMiles)}</Text>
+            <Text style={styles.statUnit}>/mi</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Target Pace</Text>
+            <Text style={styles.statValue}>{stats.targetPaceSeconds}</Text>
             <Text style={styles.statUnit}>/mi</Text>
           </View>
           <View style={styles.statCard}>
