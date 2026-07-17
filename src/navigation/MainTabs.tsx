@@ -3,6 +3,7 @@
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalendarTabIcon, HomeTabIcon, PathsTabIcon, ProfileTabIcon } from '../components/icons';
 import { CalendarScreen } from '../screens/main/CalendarScreen';
 import { HomeScreen } from '../screens/main/HomeScreen';
@@ -14,6 +15,9 @@ import type { MainTabParamList } from './types';
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export function MainTabs() {
+
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -23,9 +27,9 @@ export function MainTabs() {
         tabBarStyle: {
           backgroundColor: colors.fieldBg,
           borderTopColor: 'rgba(110,100,88,0.14)',
-          height: 64,
+          height: 64 + insets.bottom,
           paddingTop: 8,
-          paddingBottom: 10,
+          paddingBottom: insets.bottom + 14,
         },
         tabBarLabelStyle: {
           fontSize: 10,

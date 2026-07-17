@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AboutIcon, BellIcon, LogoMark, LogoutIcon, ChevronRightIcon, UserIcon } from '../../components/icons';
 import { useAuth } from '../../context/AuthContext';
@@ -7,16 +7,25 @@ import { useRunData } from '../../context/RunDataContext';
 import { colors } from '../../theme/colors';
 import { formatLongDate } from '../../utils/date';
 
-const SETTINGS_ROWS = (email: string) => [
-  { icon: <UserIcon size={18} color={colors.charcoal} />, label: 'Account', sub: email },
-  { icon: <BellIcon />, label: 'Notifications', sub: 'Push & email alerts' },
-  { icon: <AboutIcon />, label: 'Help & Support', sub: 'FAQs, contact us' },
-  { icon: <AboutIcon />, label: 'About Iter', sub: 'Version 1.0.0' },
+type SettingsSheet = 'account' | 'notifications' | 'about';
+
+const SETTINGS_ROWS = (
+  email: string,
+  onOpenAccount: () => void,
+  onOpenNotifications: () => void,
+  onContactSupport: () => void,
+  onOpenAbout: () => void,
+) => [
+  { icon: <UserIcon size={18} color={colors.charcoal} />, label: 'Account', sub: email, onPress: onOpenAccount },
+  { icon: <BellIcon />, label: 'Notifications', sub: 'Push & email alerts', onPress: onOpenNotifications },
+  { icon: <AboutIcon />, label: 'Help & Support', sub: 'FAQs, contact us', onPress: onContactSupport },
+  { icon: <AboutIcon />, label: 'About Iter', sub: 'Version 1.0.0', onPress: onOpenAbout },
 ];
 
 export function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { runs } = useRunData();
+  const [openSheet, setOpenSheet] = useState<SettingsSheet | null>(null);
 
   const allTimeStats = useMemo(() => {
     const totalMiles = runs.reduce((sum, r) => sum + r.distanceMiles, 0);
@@ -29,6 +38,10 @@ export function ProfileScreen() {
   }, [runs]);
 
   const firstInitial = (user?.username?.[0] ?? '?').toUpperCase();
+
+  const handleContactSupport = () => {
+    Linking.openURL('mailto:support@iterapp.com?subject=Iter%20Support');
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -73,10 +86,21 @@ export function ProfileScreen() {
 
           <Text style={styles.sectionLabel}>Settings</Text>
           <View style={styles.settingsList}>
-            {SETTINGS_ROWS(user?.email ?? '').map(({ icon, label, sub }, index, arr) => (
-              <View
+            {SETTINGS_ROWS(
+              user?.email ?? '',
+              () => setOpenSheet('account'),
+              () => setOpenSheet('notifications'),
+              handleContactSupport,
+              () => setOpenSheet('about'),
+            ).map(({ icon, label, sub, onPress }, index, arr) => (
+              <Pressable
                 key={label}
-                style={[styles.settingsRow, index < arr.length - 1 && styles.settingsRowBorder]}
+                onPress={onPress}
+                style={({ pressed }) => [
+                  styles.settingsRow,
+                  index < arr.length - 1 && styles.settingsRowBorder,
+                  pressed && styles.pressed,
+                ]}
               >
                 <View style={styles.settingsIconTile}>{icon}</View>
                 <View style={{ flex: 1 }}>
@@ -84,7 +108,7 @@ export function ProfileScreen() {
                   <Text style={styles.settingsSub}>{sub}</Text>
                 </View>
                 <ChevronRightIcon />
-              </View>
+              </Pressable>
             ))}
           </View>
 
@@ -99,6 +123,61 @@ export function ProfileScreen() {
           <Text style={styles.footerText}>Iter · Version 1.0.0</Text>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={openSheet !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOpenSheet(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpenSheet(null)} />
+          <View style={styles.sheet}>
+            {openSheet === 'account' && (
+              <>
+                <Text style={styles.sheetTitle}>Account</Text>
+                <View style={styles.sheetInfoRow}>
+                  <Text style={styles.sheetInfoLabel}>Username</Text>
+                  <Text style={styles.sheetInfoValue}>{user?.username ?? '—'}</Text>
+                </View>
+                <View style={styles.sheetInfoRow}>
+                  <Text style={styles.sheetInfoLabel}>Email</Text>
+                  <Text style={styles.sheetInfoValue}>{user?.email ?? '—'}</Text>
+                </View>
+                <View style={[styles.sheetInfoRow, styles.sheetInfoRowLast]}>
+                  <Text style={styles.sheetInfoLabel}>Member since</Text>
+                  <Text style={styles.sheetInfoValue}>{user ? formatLongDate(user.createdAt) : '—'}</Text>
+                </View>
+              </>
+            )}
+            {openSheet === 'notifications' && (
+              <>
+                <Text style={styles.sheetTitle}>Notifications</Text>
+                <Text style={styles.sheetBody}>Off — not supported yet.</Text>
+              </>
+            )}
+            {openSheet === 'about' && (
+              <>
+                <View style={styles.sheetLogoRow}>
+                  <LogoMark size={14} />
+                  <Text style={styles.sheetTitle}>Iter</Text>
+                </View>
+                <Text style={styles.sheetBody}>
+                  Plan a route, watch it snap to real footpaths, then go run it. Built for people who'd rather be
+                  running than fighting with a map.
+                </Text>
+                <Text style={styles.sheetVersion}>Version 1.0.0</Text>
+              </>
+            )}
+            <Pressable
+              onPress={() => setOpenSheet(null)}
+              style={({ pressed }) => [styles.sheetCloseButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.sheetCloseLabel}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -277,5 +356,79 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 11,
     paddingBottom: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(26,23,20,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  sheet: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: colors.fieldBg,
+    borderRadius: 24,
+    padding: 24,
+  },
+  sheetTitle: {
+    color: colors.nearBlack,
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    marginBottom: 18,
+  },
+  sheetLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  sheetInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(110,100,88,0.12)',
+  },
+  sheetInfoRowLast: {
+    borderBottomWidth: 0,
+    marginBottom: 10,
+  },
+  sheetInfoLabel: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sheetInfoValue: {
+    color: colors.nearBlack,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sheetBody: {
+    color: colors.charcoal,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  sheetVersion: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 10,
+  },
+  sheetCloseButton: {
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  sheetCloseLabel: {
+    color: '#1A1714',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
