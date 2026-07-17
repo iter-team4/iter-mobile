@@ -19,13 +19,13 @@ export function RunCompleteScreen({ navigation, route }: Props) {
 
   // Snapshot prior runs on this path *before* we save the new one, so the
   // personal-best check below isn't comparing the run against itself.
-  const [priorRunsOnPath] = useState(() => runs.filter((r) => r.pathId === stats.path.id));
+  const [priorRunsOnPath] = useState(() => runs.filter((r) => r.routeId === stats.path.id));
 
   useEffect(() => {
     if (hasSaved.current) return;
     hasSaved.current = true;
     addRun({
-      pathId: stats.path.id,
+      routeId: stats.path.id, // Changed from pathId to routeId to match backend FK
       pathName: stats.path.name,
       distanceMiles: stats.distanceMiles,
       durationSeconds: stats.elapsedSeconds,
