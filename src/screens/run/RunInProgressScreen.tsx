@@ -28,20 +28,23 @@ function getPaceColor(
   }
 
   const difference = currentPaceSeconds - targetPaceSeconds;
-  const absoluteDifference = Math.abs(difference);
 
-  // Within one minute of target pace
-  if (absoluteDifference <= 60) {
-    return colors.success;
+  if(targetPaceSeconds == 0){
+    return colors.nearBlack
   }
 
+  // Within one minute of target pace
+  // if (absoluteDifference <= 60) {
+  //   return colors.success;
+  // }
+
   // Between one and two minutes away
-  if (absoluteDifference <= 120) {
+  if (difference <= 0 ) {
     return colors.gold;
   }
 
   // More than two minutes slower than target
-  if (difference > 120) {
+  if (difference > 10) {
     return colors.danger;
   }
 

@@ -39,6 +39,7 @@ export function PathBuilderScreen({ navigation }: Props) {
   const [saveSheetOpen, setSaveSheetOpen] = useState(false);
   const [pathName, setPathName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
 
   const [snappedRoute, setSnappedRoute] = useState<WalkingRoute | null>(null);
   const [snapping, setSnapping] = useState(false);
@@ -54,7 +55,14 @@ export function PathBuilderScreen({ navigation }: Props) {
       }
       try {
         const position = await Location.getCurrentPositionAsync({});
-        setInitialCenter({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+
+        const coordinate = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+
+      setInitialCenter(coordinate);
+      setUserLocation(coordinate);
       } catch {
         setInitialCenter(FALLBACK_CENTER);
       }
@@ -102,16 +110,28 @@ export function PathBuilderScreen({ navigation }: Props) {
   };
 
   const handleLocateMe = async () => {
-    setLocating(true);
-    try {
-      const position = await Location.getCurrentPositionAsync({});
-      mapRef.current?.animateTo(position.coords.latitude, position.coords.longitude);
-    } catch {
-      // no GPS fix available (simulator, permissions revoked mid-session, etc) - just ignore
-    } finally {
-      setLocating(false);
-    }
-  };
+  setLocating(true);
+
+  try {
+    const position = await Location.getCurrentPositionAsync({});
+
+    const coordinate = {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+    };
+
+    setUserLocation(coordinate);
+
+    mapRef.current?.animateTo(
+      coordinate.latitude,
+      coordinate.longitude
+    );
+  } catch {
+    // No GPS fix available.
+  } finally {
+    setLocating(false);
+  }
+};
 
   // Draw the snapped route once we have one; otherwise fall back to a
   // straight line between taps so there's always something on the map while
@@ -124,16 +144,33 @@ export function PathBuilderScreen({ navigation }: Props) {
       ? [{ coordinates: points, color: colors.gold, weight: 4 }]
       : [];
 
-  const markers: LeafletMarker[] = points.map((point, index) => {
-    const isStart = index === 0;
-    const isEnd = index === points.length - 1 && points.length > 1;
-    return {
-      coordinate: point,
-      radius: isStart || isEnd ? 8 : 5,
-      color: isEnd ? '#fff' : colors.gold,
-      strokeColor: isEnd ? colors.gold : '#fff',
-    };
-  });
+      const routeMarkers: LeafletMarker[] = points.map((point, index) => {
+      const isStart = index === 0;
+      const isEnd = index === points.length - 1 && points.length > 1;
+
+      return {
+        coordinate: point,
+        radius: isStart || isEnd ? 8 : 5,
+        color: isEnd ? '#fff' : colors.gold,
+        strokeColor: isEnd ? colors.gold : '#fff',
+      };
+    });
+
+    const userMarker: LeafletMarker[] = userLocation
+      ? [
+          {
+            coordinate: userLocation,
+            radius: 9,
+            color: '#2196F3',
+            strokeColor: '#ffffff',
+          },
+        ]
+      : [];
+
+    const markers: LeafletMarker[] = [
+      ...routeMarkers,
+      ...userMarker,
+    ];
 
   const handleSave = async () => {
     setSaving(true);
