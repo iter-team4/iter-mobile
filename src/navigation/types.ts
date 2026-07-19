@@ -1,7 +1,6 @@
 // Central place for navigator param lists so screens get typed
 // `navigation.navigate(...)` / `route.params` instead of `any`.
 
-import type { RunRecord } from '../api/mockApi';
 import type { SavedPath } from '../api/pathsApi';
 
 export type AuthStackParamList = {

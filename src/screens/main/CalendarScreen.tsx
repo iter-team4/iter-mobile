@@ -6,7 +6,7 @@ import { RouteThumbnail } from '../../components/RouteThumbnail';
 import { useRunData } from '../../context/RunDataContext';
 import { colors } from '../../theme/colors';
 import { formatPace } from '../../utils/geo';
-import type { RunRecord } from '../../api/mockApi';
+import type { Run } from '../../api/runsApi';
 
 const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const MONTH_NAMES = [
@@ -31,9 +31,9 @@ export function CalendarScreen() {
 
   // Index this month's runs by day-of-month for quick lookup while rendering the grid.
   const runsByDay = useMemo(() => {
-    const map = new Map<string, RunRecord>();
+    const map = new Map<string, Run>();
     for (const run of runs) {
-      const runDate = new Date(run.date);
+      const runDate = new Date(run.createdAt);
       if (runDate.getFullYear() === viewedYear && runDate.getMonth() === viewedMonth) {
         map.set(dateKey(runDate), run);
       }
@@ -160,7 +160,7 @@ export function CalendarScreen() {
               </View>
 
               <View style={styles.runCard}>
-                <RouteThumbnail points={selectedRun.route} width={311} height={110} />
+                <RouteThumbnail points={selectedRun.trace} width={311} height={110} />
                 <View style={styles.runCardBody}>
                   <Text style={styles.runCardTitle}>{selectedRun.pathName}</Text>
                   <View style={styles.runCardStatsRow}>

@@ -4,12 +4,12 @@
 // immediately shows up in the Saved Paths tab without needing a manual
 // refresh.
 //
-// Saved paths are backed by the real backend (src/api/pathsApi.ts). Run
-// history is still local-only (src/api/mockApi.ts) - see that file's header
-// comment for why.
+// Both saved paths and run history are backed by the real backend now
+// (src/api/pathsApi.ts and src/api/runsApi.ts).
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { mockApi, type LatLng, type RunRecord } from '../api/mockApi';
+import type { LatLng } from '../utils/geo';
+import { runsApi, type Run } from '../api/runsApi';
 import { pathsApi, type SavedPath } from '../api/pathsApi';
 import { useAuth } from './AuthContext';
 
@@ -17,12 +17,12 @@ export type { SavedPath };
 
 interface RunDataContextValue {
   savedPaths: SavedPath[];
-  runs: RunRecord[];
+  runs: Run[];
   isLoading: boolean;
   refresh: () => Promise<void>;
   addPath: (name: string, points: LatLng[]) => Promise<SavedPath>;
   deletePath: (id: string) => Promise<void>;
-  addRun: (run: Omit<RunRecord, 'id' | 'ownerId'>) => Promise<RunRecord>;
+  addRun: (run: Omit<Run, 'id' | 'createdAt'>) => Promise<Run>;
 }
 
 const RunDataContext = createContext<RunDataContextValue | undefined>(undefined);
@@ -30,7 +30,7 @@ const RunDataContext = createContext<RunDataContextValue | undefined>(undefined)
 export function RunDataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [savedPaths, setSavedPaths] = useState<SavedPath[]>([]);
-  const [runs, setRuns] = useState<RunRecord[]>([]);
+  const [runs, setRuns] = useState<Run[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -43,7 +43,7 @@ export function RunDataProvider({ children }: { children: React.ReactNode }) {
     try {
       const [paths, runHistory] = await Promise.all([
         pathsApi.getSavedPaths(),
-        mockApi.getRuns(user.id),
+        runsApi.getRuns(),
       ]);
       setSavedPaths(paths);
       setRuns(runHistory);
@@ -77,9 +77,9 @@ export function RunDataProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addRun = useCallback(
-    async (run: Omit<RunRecord, 'id' | 'ownerId'>) => {
+    async (run: Omit<Run, 'id' | 'createdAt'>) => {
       if (!user) throw new Error('Must be signed in to save a run');
-      const record = await mockApi.saveRun(user.id, run);
+      const record = await runsApi.saveRun(run);
       setRuns((prev) => [record, ...prev]);
       return record;
     },

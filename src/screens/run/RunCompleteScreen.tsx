@@ -29,9 +29,8 @@ export function RunCompleteScreen({ navigation, route }: Props) {
       pathName: stats.path.name,
       distanceMiles: stats.distanceMiles,
       durationSeconds: stats.elapsedSeconds,
-      route: stats.route.length > 0 ? stats.route : stats.path.points,
-      date: new Date().toISOString(),
-      targetPaceSeconds : stats.targetPaceSeconds,
+      trace: stats.route.length > 0 ? stats.route : stats.path.points,
+      targetPaceSeconds: stats.targetPaceSeconds,
     });
     // Only want this to fire once, right when the screen mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps

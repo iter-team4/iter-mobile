@@ -26,7 +26,7 @@ export function HomeScreen({ navigation }: Props) {
 
   const weekStats = useMemo(() => {
     const cutoff = Date.now() - ONE_WEEK_MS;
-    const thisWeek = runs.filter((r) => new Date(r.date).getTime() >= cutoff);
+    const thisWeek = runs.filter((r) => new Date(r.createdAt).getTime() >= cutoff);
     const totalMiles = thisWeek.reduce((sum, r) => sum + r.distanceMiles, 0);
     const totalSeconds = thisWeek.reduce((sum, r) => sum + r.durationSeconds, 0);
     return {
@@ -112,7 +112,7 @@ export function HomeScreen({ navigation }: Props) {
                         {run.pathName}
                       </Text>
                       <Text style={styles.runMeta}>
-                        {formatRelativeDate(run.date)} · {formatDuration(run.durationSeconds)}
+                        {formatRelativeDate(run.createdAt)} · {formatDuration(run.durationSeconds)}
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
