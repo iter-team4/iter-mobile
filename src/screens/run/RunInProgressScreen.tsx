@@ -52,6 +52,90 @@ function getPaceColor(
   return colors.success;
 }
 
+  const EARTH_RADIUS_MILES = 3958.8;
+
+  function degreesToRadians(degrees: number): number {
+    return degrees * (Math.PI / 180);
+  }
+
+  function distanceBetweenPointsMiles(
+    first: LatLng,
+    second: LatLng,
+  ): number {
+    const latitudeDifference = degreesToRadians(
+      second.latitude - first.latitude,
+    );
+
+    const longitudeDifference = degreesToRadians(
+      second.longitude - first.longitude,
+    );
+
+    const firstLatitude = degreesToRadians(first.latitude);
+    const secondLatitude = degreesToRadians(second.latitude);
+
+    const a =
+      Math.sin(latitudeDifference / 2) ** 2 +
+      Math.cos(firstLatitude) *
+        Math.cos(secondLatitude) *
+        Math.sin(longitudeDifference / 2) ** 2;
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return EARTH_RADIUS_MILES * c;
+  }
+
+  function getPointAtDistance(
+    route: LatLng[],
+    targetDistanceMiles: number,
+  ): LatLng | null {
+    if (route.length === 0) {
+      return null;
+    }
+
+    if (route.length === 1 || targetDistanceMiles <= 0) {
+      return route[0];
+    }
+
+    let distanceCovered = 0;
+
+    for (let index = 1; index < route.length; index += 1) {
+      const segmentStart = route[index - 1];
+      const segmentEnd = route[index];
+
+      const segmentDistance = distanceBetweenPointsMiles(
+        segmentStart,
+        segmentEnd,
+      );
+
+      if (distanceCovered + segmentDistance >= targetDistanceMiles) {
+        const distanceIntoSegment =
+          targetDistanceMiles - distanceCovered;
+
+        const segmentProgress =
+          segmentDistance > 0
+            ? distanceIntoSegment / segmentDistance
+            : 0;
+
+        return {
+          latitude:
+            segmentStart.latitude +
+            (segmentEnd.latitude - segmentStart.latitude) *
+              segmentProgress,
+
+          longitude:
+            segmentStart.longitude +
+            (segmentEnd.longitude - segmentStart.longitude) *
+              segmentProgress,
+        };
+      }
+
+      distanceCovered += segmentDistance;
+    }
+
+    // The target runner has completed the route.
+    return route[route.length - 1];
+  }
+
 export function RunInProgressScreen({ navigation, route }: Props) {
   const { path, targetPaceSeconds } = route.params;
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -98,6 +182,25 @@ export function RunInProgressScreen({ navigation, route }: Props) {
     // doesn't happen mid-run - fine to only depend on identity here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const targetDistanceMiles =
+    targetPaceSeconds > 0
+      ? Math.min(
+          elapsedSeconds / targetPaceSeconds,
+          path.distanceMiles,
+        )
+      : 0;
+
+  const targetPosition =
+    targetPaceSeconds > 0
+      ? getPointAtDistance(
+          path.points,
+          Math.min(
+            elapsedSeconds / targetPaceSeconds,
+            path.distanceMiles,
+          ),
+        )
+      : null;
 
   const distanceMiles = totalDistanceMiles(traveledRoute);
   const plannedMiles = Math.max(path.distanceMiles, 0.01);
@@ -152,8 +255,37 @@ const handleStop = async () => {
   ];
 
   const markers: LeafletMarker[] = [
-    ...(path.points[0] ? [{ coordinate: path.points[0], color: colors.gold, strokeColor: '#fff', radius: 7 }] : []),
-    ...(currentPosition ? [{ coordinate: currentPosition, glow: true }] : []),
+    ...(path.points[0]
+      ? [
+          {
+            coordinate: path.points[0],
+            color: colors.gold,
+            strokeColor: '#fff',
+            radius: 7,
+          },
+        ]
+      : []),
+
+    ...(targetPosition
+    ? [
+        {
+          coordinate: targetPosition,
+          glow: true,
+          color: colors.success,
+          strokeColor: '#fff',
+          radius: 8,
+        },
+      ]
+    : []),
+
+    ...(currentPosition
+      ? [
+          {
+            coordinate: currentPosition,
+            glow: true,
+          },
+        ]
+      : []),
   ];
 
   return (
