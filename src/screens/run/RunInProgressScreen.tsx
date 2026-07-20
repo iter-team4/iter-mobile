@@ -271,7 +271,7 @@ const handleStop = async () => {
         {
           coordinate: targetPosition,
           glow: true,
-          color: colors.success,
+          color: colors.target,
           strokeColor: '#fff',
           radius: 8,
         },
