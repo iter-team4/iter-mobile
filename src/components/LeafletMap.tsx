@@ -117,7 +117,6 @@ function buildMapHtml(center: LatLng, zoom: number): string {
       width: 14px;
       height: 14px;
       border-radius: 50%;
-      background: #D5A021;
       border: 2.5px solid #fff;
       box-shadow: 0 0 0 4px rgba(213, 160, 33, 0.25), 0 2px 8px rgba(0, 0, 0, 0.3);
     }
@@ -166,7 +165,12 @@ function buildMapHtml(center: LatLng, zoom: number): string {
       (data.markers || []).forEach(function (marker) {
         var layer;
         if (marker.glow) {
-          var icon = L.divIcon({ className: '', html: '<div class="gps-dot"></div>', iconSize: [14, 14] });
+          var dotColor = marker.color || '#D5A021';
+              var icon = L.divIcon({
+                className: '',
+                html: '<div class="gps-dot" style="background:' + dotColor + ';"></div>',
+                iconSize: [14, 14],
+              });
           layer = L.marker([marker.coordinate.latitude, marker.coordinate.longitude], { icon: icon });
         } else {
           layer = L.circleMarker([marker.coordinate.latitude, marker.coordinate.longitude], {

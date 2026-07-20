@@ -13,6 +13,7 @@ export const colors = {
   border: 'rgba(110, 100, 88, 0.18)',
   danger: '#C0392B', // errors, log out button, stop button
   success: '#5A8A5A',
+  blue: '#4285F4',
 
   // Welcome screen uses a dark theme, so it needs its own set of "inverted" colors
   darkBg: '#1A1714',

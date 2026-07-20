@@ -283,6 +283,7 @@ const handleStop = async () => {
           {
             coordinate: currentPosition,
             glow: true,
+            color: colors.blue,
           },
         ]
       : []),
