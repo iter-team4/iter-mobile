@@ -4,21 +4,22 @@
 
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image,Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../theme/colors';
 import type { AuthStackParamList } from '../../navigation/types';
-import { LogoMark } from '../../components/icons';
-
+require('../../../assets/images/logo.png')
 type Props = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;
 
 export function WelcomeScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.hero}>
-        <View style={styles.logoBadge}>
-          <LogoMark size={32} />
-        </View>
+        <Image
+          source={require('../../../assets/images/logo.png')}
+          style={styles.logoLarge}
+          resizeMode="contain"
+        />
         <Text style={styles.wordmark}>iter</Text>
 
         <View style={styles.divider} />
@@ -65,16 +66,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingTop: 48,
   },
-  logoBadge: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
-    backgroundColor: 'rgba(213,160,33,0.12)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(213,160,33,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  logo: {
+    width: 48,
+    height: 48,
   },
+  logoLarge: {
+  width: 120,
+  height: 120,
+  marginBottom: 20,
+},
   wordmark: {
     color: colors.darkText,
     fontSize: 42,
