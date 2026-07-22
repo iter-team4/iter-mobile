@@ -30,12 +30,20 @@ export function CalendarScreen() {
   const isViewingCurrentMonth = viewedYear === today.getFullYear() && viewedMonth === today.getMonth();
 
   // Index this month's runs by day-of-month for quick lookup while rendering the grid.
-  const runsByDay = useMemo(() => {
-    const map = new Map<string, Run>();
+ const runsByDay = useMemo(() => {
+    const map = new Map<string, Run[]>();
+
     for (const run of runs) {
       const runDate = new Date(run.createdAt);
-      if (runDate.getFullYear() === viewedYear && runDate.getMonth() === viewedMonth) {
-        map.set(dateKey(runDate), run);
+
+      if (
+        runDate.getFullYear() === viewedYear &&
+        runDate.getMonth() === viewedMonth
+      ) {
+        const key = dateKey(runDate);
+        const existingRuns = map.get(key) ?? [];
+
+        map.set(key, [...existingRuns, run]);
       }
     }
     return map;
@@ -53,13 +61,25 @@ export function CalendarScreen() {
   }, [viewedYear, viewedMonth]);
 
   const monthTotals = useMemo(() => {
-    let miles = 0;
-    for (const run of runsByDay.values()) miles += run.distanceMiles;
-    return { count: runsByDay.size, miles: miles.toFixed(1) };
-  }, [runsByDay]);
+  let miles = 0;
+  let count = 0;
 
-  const selectedRun = runsByDay.get(`${viewedYear}-${viewedMonth}-${selectedDay}`) ?? null;
+  for (const dayRuns of runsByDay.values()) {
+    count += dayRuns.length;
 
+    for (const run of dayRuns) {
+      miles += run.distanceMiles;
+    }
+  }
+
+  return {
+    count,
+    miles: miles.toFixed(1),
+  };
+}, [runsByDay]);
+
+  const selectedRuns = runsByDay.get(`${viewedYear}-${viewedMonth}-${selectedDay}`) ?? [];
+  
   const goToPrevMonth = () => {
     if (viewedMonth === 0) {
       setViewedMonth(11);
@@ -148,53 +168,94 @@ export function CalendarScreen() {
         </View>
 
         <View style={styles.dayDetail}>
-          {selectedRun ? (
+          {selectedRuns.length > 0 ? (
             <View>
               <View style={styles.dayDetailHeaderRow}>
                 <Text style={styles.dayDetailHeading}>
                   {MONTH_NAMES[viewedMonth]} {selectedDay}
                 </Text>
+
                 <View style={styles.loggedBadge}>
-                  <Text style={styles.loggedBadgeText}>Run logged</Text>
+                  <Text style={styles.loggedBadgeText}>
+                    {selectedRuns.length}{' '}
+                    {selectedRuns.length === 1 ? 'run' : 'runs'} logged
+                  </Text>
                 </View>
               </View>
 
-              <View style={styles.runCard}>
-                <RouteThumbnail points={selectedRun.trace} width={311} height={110} />
-                <View style={styles.runCardBody}>
-                  <Text style={styles.runCardTitle}>{selectedRun.pathName}</Text>
-                  <View style={styles.runCardStatsRow}>
-                    <View style={styles.runCardStat}>
-                      <Text style={styles.runCardStatLabel}>Distance</Text>
-                      <Text style={styles.runCardStatValue}>{selectedRun.distanceMiles.toFixed(1)} mi</Text>
-                    </View>
-                    <View style={styles.runCardStat}>
-                      <Text style={styles.runCardStatLabel}>Avg Pace</Text>
-                      <Text style={styles.runCardStatValue}>
-                        {formatPace(selectedRun.durationSeconds, selectedRun.distanceMiles)}
-                      </Text>
-                    </View>
-                    <View style={styles.runCardStat}>
-                      <Text style={styles.runCardStatLabel}>Date</Text>
-                      <Text style={styles.runCardStatValue}>
-                        {MONTH_NAMES[viewedMonth].slice(0, 3)} {selectedDay}
-                      </Text>
+              {selectedRuns.map((run, index) => (
+                <View
+                  key={run.id ?? `${run.createdAt}-${index}`}
+                  style={[
+                    styles.runCard,
+                    index < selectedRuns.length - 1 && styles.runCardSpacing,
+                  ]}
+                >
+                  <RouteThumbnail
+                    points={run.trace}
+                    width={311}
+                    height={110}
+                  />
+
+                  <View style={styles.runCardBody}>
+                    <Text style={styles.runCardTitle}>
+                      {run.pathName}
+                    </Text>
+
+                    <View style={styles.runCardStatsRow}>
+                      <View style={styles.runCardStat}>
+                        <Text style={styles.runCardStatLabel}>
+                          Distance
+                        </Text>
+                        <Text style={styles.runCardStatValue}>
+                          {run.distanceMiles.toFixed(1)} mi
+                        </Text>
+                      </View>
+
+                      <View style={styles.runCardStat}>
+                        <Text style={styles.runCardStatLabel}>
+                          Avg Pace
+                        </Text>
+                        <Text style={styles.runCardStatValue}>
+                          {formatPace(
+                            run.durationSeconds,
+                            run.distanceMiles
+                          )}
+                        </Text>
+                      </View>
+
+                      <View style={styles.runCardStat}>
+                        <Text style={styles.runCardStatLabel}>
+                          Time
+                        </Text>
+                        <Text style={styles.runCardStatValue}>
+                          {new Date(run.createdAt).toLocaleTimeString([], {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </View>
-              </View>
+              ))}
             </View>
           ) : (
             <View>
               <Text style={styles.dayDetailHeading}>
                 {MONTH_NAMES[viewedMonth]} {selectedDay}
               </Text>
+
               <View style={styles.noRunCard}>
                 <View style={styles.noRunIconBadge}>
                   <InfoIcon />
                 </View>
+
                 <Text style={styles.noRunTitle}>No run logged</Text>
-                <Text style={styles.noRunBody}>Rest day. Tap a run day to see your stats.</Text>
+
+                <Text style={styles.noRunBody}>
+                  Rest day. Tap a run day to see your stats.
+                </Text>
               </View>
             </View>
           )}
@@ -415,5 +476,8 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     textAlign: 'center',
     maxWidth: 200,
+  },
+  runCardSpacing: {
+    marginBottom: 14,
   },
 });
