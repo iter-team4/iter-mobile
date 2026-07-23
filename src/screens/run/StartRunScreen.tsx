@@ -92,8 +92,8 @@ export function StartRunScreen({ navigation }: Props) {
                 </Text>
                 <View style={styles.pathMetaRow}>
                   <Text style={styles.pathDistance}>{item.distanceMiles.toFixed(1)} mi</Text>
-                  <View style={styles.dot} />
-                  <Text style={styles.pathPoints}>{item.points.length} pts</Text>
+                  {/* <View style={styles.dot} />
+                  <Text style={styles.pathPoints}>{item.points.length} pts</Text> */}
                 </View>
               </View>
               <Pressable

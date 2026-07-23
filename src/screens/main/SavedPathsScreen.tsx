@@ -52,7 +52,7 @@ export function SavedPathsScreen({ navigation }: Props) {
             <Text style={styles.count}>{savedPaths.length} routes</Text>
           )}
         </View>
-        {savedPaths.length > 0 && <Text style={styles.subtitle}>Tap a route to preview or start a run.</Text>}
+        {savedPaths.length > 0 && <Text style={styles.subtitle}>Tap a route to preview.</Text>}
       </View>
 
       {savedPaths.length === 0 ? (
@@ -98,8 +98,8 @@ export function SavedPathsScreen({ navigation }: Props) {
                 </Text>
                 <View style={styles.pathMetaRow}>
                   <Text style={styles.pathDistance}>{item.distanceMiles.toFixed(1)} mi</Text>
-                  <View style={styles.dot} />
-                  <Text style={styles.pathPoints}>{item.points.length} pts</Text>
+                  {/* <View style={styles.dot} />
+                  <Text style={styles.pathPoints}>{item.points.length} pts</Text> */}
                 </View>
                 <Text style={styles.pathDate}>Saved {formatLongDate(item.createdAt)}</Text>
               </View>
@@ -130,10 +130,10 @@ export function SavedPathsScreen({ navigation }: Props) {
                 <Text style={styles.sheetStatLabel}>Distance</Text>
                 <Text style={styles.sheetStatValue}>{selectedPath.distanceMiles.toFixed(1)} mi</Text>
               </View>
-              <View style={styles.sheetStat}>
+              {/* <View style={styles.sheetStat}>
                 <Text style={styles.sheetStatLabel}>Points</Text>
                 <Text style={styles.sheetStatValue}>{selectedPath.points.length}</Text>
-              </View>
+              </View> */}
               <View style={styles.sheetStat}>
                 <Text style={styles.sheetStatLabel}>Saved</Text>
                 <Text style={styles.sheetStatValue}>{formatLongDate(selectedPath.createdAt)}</Text>
@@ -153,7 +153,7 @@ export function SavedPathsScreen({ navigation }: Props) {
               >
                 <Text style={styles.sheetCloseLabel}>Close</Text>
               </Pressable>
-              <Pressable
+              {/* <Pressable
                 onPress={() => {
                   const path = selectedPath;
                   setSelectedPath(null);
@@ -163,7 +163,7 @@ export function SavedPathsScreen({ navigation }: Props) {
               >
                 <LogoMark size={14} color="#1A1714" />
                 <Text style={styles.sheetStartLabel}>Start Run</Text>
-              </Pressable>
+              </Pressable> */}
             </View>
           </View>
         )}
