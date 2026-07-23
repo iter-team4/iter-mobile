@@ -193,13 +193,7 @@ export function RunInProgressScreen({ navigation, route }: Props) {
 
   const targetPosition =
     targetPaceSeconds > 0
-      ? getPointAtDistance(
-          path.points,
-          Math.min(
-            elapsedSeconds / targetPaceSeconds,
-            path.distanceMiles,
-          ),
-        )
+      ? getPointAtDistance(path.points, targetDistanceMiles)
       : null;
 
   const distanceMiles = totalDistanceMiles(traveledRoute);
