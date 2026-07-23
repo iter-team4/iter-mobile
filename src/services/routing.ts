@@ -8,7 +8,7 @@
 
 import type { LatLng } from '../utils/geo';
 
-const OSRM_URL = 'https://router.project-osrm.org/route/v1/walking';
+const OSRM_URL = "https://routing.openstreetmap.de/routed-foot/route/v1/driving";
 
 export interface WalkingRoute {
   geometry: LatLng[];

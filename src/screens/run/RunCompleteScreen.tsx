@@ -78,7 +78,7 @@ export function RunCompleteScreen({ navigation, route }: Props) {
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Target Pace</Text>
             <Text style={styles.statValue}>{stats.targetPaceSeconds}</Text>
-            <Text style={styles.statUnit}>/mi</Text>
+            <Text style={styles.statUnit}>Seconds</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Date</Text>

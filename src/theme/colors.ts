@@ -14,7 +14,7 @@ export const colors = {
   danger: '#C0392B', // errors, log out button, stop button
   success: '#5A8A5A',
   blue: '#4285F4',
-  target: '#4b00d5',
+  target: '#5a5a5a',
 
   // Welcome screen uses a dark theme, so it needs its own set of "inverted" colors
   darkBg: '#1A1714',
