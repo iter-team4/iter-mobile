@@ -45,6 +45,7 @@ export function RunCompleteScreen({ navigation, route }: Props) {
 
   const today = new Date().toISOString();
   const previewRoute = stats.route.length > 1 ? stats.route : stats.path.points;
+  const targetPaceMinutes = stats.targetPaceSeconds / 60;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -77,8 +78,10 @@ export function RunCompleteScreen({ navigation, route }: Props) {
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Target Pace</Text>
-            <Text style={styles.statValue}>{stats.targetPaceSeconds}</Text>
-            <Text style={styles.statUnit}>Seconds</Text>
+            <Text style={styles.statValue}>
+              {Math.floor(targetPaceMinutes)}:{((targetPaceMinutes % 1) * 60).toFixed(0).padStart(2, '0')}
+            </Text>
+            <Text style={styles.statUnit}>min:sec</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Date</Text>
